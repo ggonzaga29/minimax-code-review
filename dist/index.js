@@ -31956,13 +31956,13 @@ async function reviewWithMiniMax(apiKey, model, systemPrompt, diff) {
   if (!content) {
     throw new Error('MiniMax API returned an empty response.');
   }
-  // MiniMax reasoning models (e.g. MiniMax-M3) emit their chain-of-thought in
-  // <think>...</think> inside the message content. Strip it so only the review
-  // is posted; tolerate an unclosed tag by dropping from <think> to the end.
-  return content
-    .replace(/<think>[\s\S]*?<\/think>/gi, '')
-    .replace(/<think>[\s\S]*$/i, '')
-    .trim();
+  // MiniMax reasoning models (e.g. MiniMax-M3) prefix the message content with
+  // their chain-of-thought in a single leading <think>...</think> block. Strip
+  // only that leading block: anchoring to the start keeps review text that
+  // legitimately mentions <think> (e.g. when reviewing this very workflow)
+  // intact, and an unclosed/absent block degrades to showing reasoning rather
+  // than shredding the answer.
+  return content.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim();
 }
 
 async function run() {
