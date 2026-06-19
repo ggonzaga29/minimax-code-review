@@ -31923,6 +31923,11 @@ async function reviewWithMiniMax(apiKey, model, systemPrompt, diff) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Please review this pull request:\n\n${diff}` },
         ],
+        // Return reasoning models' chain-of-thought in a separate
+        // reasoning_content field instead of inline <think> tags, so the
+        // posted review is clean without any post-processing. (M3 honors this;
+        // M2.x ignore it.)
+        reasoning_split: true,
       }),
       signal: controller.signal,
     });
@@ -31956,13 +31961,7 @@ async function reviewWithMiniMax(apiKey, model, systemPrompt, diff) {
   if (!content) {
     throw new Error('MiniMax API returned an empty response.');
   }
-  // MiniMax reasoning models (e.g. MiniMax-M3) prefix the message content with
-  // their chain-of-thought in a single leading <think>...</think> block. Strip
-  // only that leading block: anchoring to the start keeps review text that
-  // legitimately mentions <think> (e.g. when reviewing this very workflow)
-  // intact, and an unclosed/absent block degrades to showing reasoning rather
-  // than shredding the answer.
-  return content.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim();
+  return content;
 }
 
 async function run() {
