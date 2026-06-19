@@ -120,7 +120,13 @@ async function reviewWithMiniMax(apiKey, model, systemPrompt, diff) {
   if (!content) {
     throw new Error('MiniMax API returned an empty response.');
   }
-  return content;
+  // MiniMax reasoning models (e.g. MiniMax-M3) emit their chain-of-thought in
+  // <think>...</think> inside the message content. Strip it so only the review
+  // is posted; tolerate an unclosed tag by dropping from <think> to the end.
+  return content
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/i, '')
+    .trim();
 }
 
 async function run() {
